@@ -1,0 +1,1 @@
+CORAL_CLI_COMMAND = ["coral", "sql"]
