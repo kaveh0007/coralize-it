@@ -1,2 +1,9 @@
 //Virtual Environment Files
 venv/
+
+//Environment Variables
+.env
+
+//Cache Files
+__pycache__/
+*.pyc
