@@ -3,6 +3,10 @@
 {% if form %}
 <form action="" method="post">
 {{ form.hidden_tag() }}
+{{ form.repository_name.label }}
+{{ form.repository_name }}
+{{ form.owner_name.label }}
+{{ form.owner_name }}
 {{ form.issue.label }}
 {{ form.issue }}
 {{ form.ask }}

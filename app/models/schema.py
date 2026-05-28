@@ -1,6 +1,9 @@
 from pydantic import BaseModel
+from typing import Dict
 
 class SQLQueryFromGenAI(BaseModel):
     thinking_process: str
-    query: str
-    is_possible: bool
+    query_template_class: str
+    is_possible_via_templates: bool
+    attributes: Dict
+    missing_attributes: bool
