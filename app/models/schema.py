@@ -7,3 +7,8 @@ class SQLQueryFromGenAI(BaseModel):
     is_possible_via_templates: bool
     attributes: Dict
     missing_attributes: bool
+
+class GenAIResponseToUser(BaseModel):
+    thinking_process: str
+    response_to_user: str
+    is_generic: bool

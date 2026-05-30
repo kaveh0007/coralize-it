@@ -44,3 +44,38 @@ textarea:focus,
 select:focus {
     outline: none;
 }
+
+/* Response Content - Dynamic sizing based on content */
+.response-content {
+    line-height: 1.6;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.response-content p {
+    margin-bottom: 1rem;
+}
+
+.response-content strong {
+    color: #047857;
+    font-weight: 600;
+}
+
+.response-content ul,
+.response-content ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.response-content li {
+    margin-bottom: 0.5rem;
+}
+
+.response-content code {
+    background-color: #ecfdf5;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: #047857;
+}
