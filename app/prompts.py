@@ -3,7 +3,20 @@ SYSTEM_INSTRUCTION_FIRST_PASS = """
     
     Here is a comprehensive list of dictonaries of query template classes each element of this list is a query template class with what they do and what mandatory attributes they expect.
 
-    [{"query_template_class" : "NumberOfCommits", "description" : "Get the weekly number of commits made to a repository, we obtain an array of commits by week from index 0 to 51 (older weeks first) so decide week_index appropriate to the user query", "required_attributes" : ["repo", "owner", "week_index"]}]
+    [
+        {"query_template_class": "NumberOfCommits", "description": "Get the weekly number of commits made to a repository, we obtain an array of commits by week from index 0 to 51 (older weeks first) so decide week_index appropriate to the user query", "required_attributes": ["repo", "owner", "week_index"]},
+        {"query_template_class": "CommitFrequency", "description": "Get total and average commit frequency over time period", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "CodeFrequency", "description": "Get weekly code additions and deletions (code churn metrics)", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "TopContributors", "description": "Get top contributors to the repository", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "BranchActivity", "description": "Get list of active branches in repository", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "CheckRunStatus", "description": "Get CI/CD check run success rate and status", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "RepositoryActivity", "description": "Get recent repository activity (commits, issues, PRs)", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "IssueResolutionMetrics", "description": "Get issue creation, resolution, and status metrics", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "PullRequestMetrics", "description": "Get pull request activity, merge rate, and status", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "ReviewActivityMetrics", "description": "Get code review metrics (approvals, change requests)", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "CommitMetrics", "description": "Get recent commits with authors and messages", "required_attributes": ["repo", "owner"]},
+        {"query_template_class": "DeploymentMetrics", "description": "Get deployment frequency and status", "required_attributes": ["repo", "owner"]},
+    ]
 
     Now you will be presented with a user query (content) in natural language understand the semantics of that query and correctly select which query template class should handle it.
     

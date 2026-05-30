@@ -7,3 +7,6 @@ venv/
 //Cache Files
 __pycache__/
 *.pyc
+
+//VSCode specific integrations
+.vscode/

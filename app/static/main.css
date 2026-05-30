@@ -45,7 +45,6 @@ select:focus {
     outline: none;
 }
 
-/* Response Content - Dynamic sizing based on content */
 .response-content {
     line-height: 1.6;
     word-wrap: break-word;

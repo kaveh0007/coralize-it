@@ -13,7 +13,7 @@ def home():
     flag = False
     form = IssueForm()
     if form.validate_on_submit():
-        user_query = form.issue.data + "Owner_Name: "
+        user_query = form.issue.data
         if form.owner_name.data:
             user_query += " owner_name: " + form.owner_name.data
         if form.repository_name.data:
