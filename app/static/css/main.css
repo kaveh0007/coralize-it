@@ -1,0 +1,46 @@
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+.animate-in {
+    animation: slideIn 300ms ease-out;
+}
+
+.animate-out {
+    animation: slideOut 300ms ease-out;
+}
+
+input,
+textarea,
+select,
+button {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+}

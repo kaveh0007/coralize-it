@@ -14,4 +14,6 @@ SYSTEM_INSTRUCTION_FIRST_PASS = """
     If there is no appropriate class set the is_possible_via_templates response_schema field to False and keep the query_template_class response_schema field null.
 
     In both the cases briefly capture your thinking process in the thinking_process response_schema field.
+
+    Your output will be consumed in a Python Environment so boolean values should follow pythonic style like True, False
 """
