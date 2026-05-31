@@ -63,8 +63,15 @@ class CodeFrequency():
             result = subprocess.run(command, capture_output=True, check=True, text=True)
             if result.stderr:
                 return {"error": result.stderr}
-            response = json.loads(result.stdout)
-            return {"code_frequency_data": response[:10]}  # Last 10 weeks
+            
+            response = json.loads(result.stdout)   
+            json_data = response[0].get("json")
+            if not json_data:
+                return {"error": "Data unavailable", "reason": "GitHub API returned no code frequency data. This typically occurs for repos with >1000 commits or inactive repos."}
+            
+            data_list = json_data if isinstance(json_data, list) else [json_data]
+            return {"code_frequency_data": data_list[:10]}
+        
         except Exception as e:
             return {"error": str(e)}
 
@@ -74,8 +81,8 @@ class TopContributors():
     def __init__(self, owner, repo, limit=10):
         self.owner = owner
         self.repo = repo
-        self.limit = limit
-        self.sql_query = f"SELECT authors FROM github.commits WHERE owner='{owner}' AND repo='{repo}' LIMIT {limit * 5}"
+        self.limit = int(limit)
+        self.sql_query = f"SELECT author FROM github.commits WHERE owner='{owner}' AND repo='{repo}' LIMIT {int(limit)}"
     
     def execute_query(self):
         command = CORAL_CLI_COMMAND.copy()
@@ -86,40 +93,18 @@ class TopContributors():
             if result.stderr:
                 return {"error": result.stderr}
             response = json.loads(result.stdout)
-            return {"contributors": response[:self.limit]}
+            return {"contributors": response}
         except Exception as e:
             return {"error": str(e)}
         
-class BranchActivity():
-    """Get activity on repository branches"""
-    
-    def __init__(self, owner, repo, limit=20):
-        self.owner = owner
-        self.repo = repo
-        self.limit = limit
-        self.sql_query = f"SELECT name FROM github.branches WHERE owner='{owner}' AND repo='{repo}' LIMIT {limit}"
-    
-    def execute_query(self):
-        command = CORAL_CLI_COMMAND.copy()
-        command.append(self.sql_query)
-        command.extend(FORMAT_TO_JSON)
-        try:
-            result = subprocess.run(command, capture_output=True, check=True, text=True)
-            if result.stderr:
-                return {"error": result.stderr}
-            response = json.loads(result.stdout)
-            return {"branch_count": len(response), "branches": response}
-        except Exception as e:
-            return {"error": str(e)}
-
 class CheckRunStatus():
     """Get CI/CD check run success rate"""
     
-    def __init__(self, owner, repo, status="completed"):
+    def __init__(self, owner, repo, ref):
         self.owner = owner
         self.repo = repo
-        self.status = status
-        self.sql_query = f"SELECT status, conclusion FROM github.check_runs WHERE owner='{owner}' AND repo='{repo}'"
+        self.ref = ref
+        self.sql_query = f"SELECT status, conclusion FROM github.check_runs WHERE owner='{owner}' AND repo='{repo}' AND ref='{ref}'"
     
     def execute_query(self):
         command = CORAL_CLI_COMMAND.copy()
@@ -130,6 +115,8 @@ class CheckRunStatus():
             if result.stderr:
                 return {"error": result.stderr}
             response = json.loads(result.stdout)
+            if not response:
+                return {"error": "No check runs found", "reason": f"No check runs available for ref '{self.ref}'"}
             total = len(response)
             success = sum(1 for r in response if r.get("conclusion") == "success")
             return {"total_runs": total, "successful_runs": success, "success_rate": f"{(success/total*100):.2f}%" if total > 0 else "0%"}
@@ -139,10 +126,11 @@ class CheckRunStatus():
 class RepositoryActivity():
     """Get recent repository activity"""
     
-    def __init__(self, owner, repo):
+    def __init__(self, owner, repo, limit):
         self.owner = owner
         self.repo = repo
-        self.sql_query = f"SELECT * FROM github.activity WHERE owner='{owner}' AND repo='{repo}' LIMIT 20"
+        self.limit = limit
+        self.sql_query = f"SELECT * FROM github.activity WHERE owner='{owner}' AND repo='{repo}' LIMIT {int(limit)}"
     
     def execute_query(self):
         command = CORAL_CLI_COMMAND.copy()
@@ -153,6 +141,8 @@ class RepositoryActivity():
             if result.stderr:
                 return {"error": result.stderr}
             response = json.loads(result.stdout)
+            if not response:
+                return {"error": "No recent activity", "reason": "Repository has no recent activity"}
             return {"recent_activities": response}
         except Exception as e:
             return {"error": str(e)}
@@ -160,10 +150,9 @@ class RepositoryActivity():
 class IssueResolutionMetrics():
     """Get issue creation and resolution metrics"""
     
-    def __init__(self, owner, repo, state="all"):
+    def __init__(self, owner, repo):
         self.owner = owner
         self.repo = repo
-        self.state = state
         self.sql_query = f"SELECT state FROM github.issues WHERE owner='{owner}' AND repo='{repo}'"
     
     def execute_query(self):
@@ -181,9 +170,30 @@ class IssueResolutionMetrics():
             return {"total_issues": total_issues, "open_issues": open_issues, "closed_issues": closed_issues}
         except Exception as e:
             return {"error": str(e)}
+        
+class LatestIssueAndHint():
+    """Get analysis on how to solve the latest issue that's open"""
+    
+    def __init__(self, owner, repo):
+        self.owner = owner
+        self.repo = repo
+        self.sql_query = f"SELECT * FROM github.issues WHERE owner='{owner}' AND repo='{repo}' AND state='open' LIMIT 1"
+    
+    def execute_query(self):
+        command = CORAL_CLI_COMMAND.copy()
+        command.append(self.sql_query)
+        command.extend(FORMAT_TO_JSON)
+        try:
+            result = subprocess.run(command, capture_output=True, check=True, text=True)
+            if result.stderr:
+                return {"error": result.stderr}
+            response = json.loads(result.stdout)
+            return response
+        except Exception as e:
+            return {"error": str(e)}
 
 class PullRequestMetrics():
-    """Get pull request activity and status"""
+    """Get pull request activity and status for the most recent pull"""
     
     def __init__(self, owner, repo, state="all"):
         self.owner = owner
@@ -277,10 +287,10 @@ CLASS_MAP = {
     "CommitFrequency": CommitFrequency,
     "CodeFrequency": CodeFrequency,
     "TopContributors": TopContributors,
-    "BranchActivity": BranchActivity,
     "CheckRunStatus": CheckRunStatus,
     "RepositoryActivity": RepositoryActivity,
     "IssueResolutionMetrics": IssueResolutionMetrics,
+    "LatestIssueAndHint": LatestIssueAndHint,
     "PullRequestMetrics": PullRequestMetrics,
     "ReviewActivityMetrics": ReviewActivityMetrics,
     "CommitMetrics": CommitMetrics,
