@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Dict
 
-class SQLQueryFromGenAI(BaseModel):
+class QueryTemplateClassFromGenAI(BaseModel):
     thinking_process: str
     query_template_class: str
     is_possible_via_templates: bool

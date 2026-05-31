@@ -1,12 +1,14 @@
 from app import app, client
 from app.forms import IssueForm
-from app.models.schema import SQLQueryFromGenAI, GenAIResponseToUser
-from app.constants import GEMINI_MODEL
-from flask import render_template, abort
+from app.models.schema import QueryTemplateClassFromGenAI, GenAIResponseToUser
+from app.constants import GEMINI_MODEL, NOT_POSSIBLE_VIA_TEMPLATES
+from flask import render_template, abort, jsonify
 from google.genai import types
 from app.prompts import SYSTEM_INSTRUCTION_FIRST_PASS, SYSTEM_INSTUCTION_SECOND_PASS
 import json
 from app.queries import CLASS_MAP
+from google.genai.errors import ClientError
+from pathlib import Path
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -18,18 +20,22 @@ def home():
             user_query += " owner_name: " + form.owner_name.data
         if form.repository_name.data:
             user_query += " repository_name: " + form.repository_name.data
-        print(user_query)
-        response = client.models.generate_content(
-            model = GEMINI_MODEL,
-            contents = user_query,
-            config = types.GenerateContentConfig(
-                response_mime_type = "application/json",
-                response_json_schema = SQLQueryFromGenAI.model_json_schema(),
-                system_instruction = SYSTEM_INSTRUCTION_FIRST_PASS
+        try:
+            response = client.models.generate_content(
+                model = GEMINI_MODEL,
+                contents = user_query,
+                config = types.GenerateContentConfig(
+                    response_mime_type = "application/json",
+                    response_json_schema = QueryTemplateClassFromGenAI.model_json_schema(),
+                    system_instruction = SYSTEM_INSTRUCTION_FIRST_PASS
+                )
             )
-        )
+        except ClientError as e:
+            if e.code == 429:
+                abort(429)
+            raise
         payload = json.loads(response.text)
-        print(payload.get("thinking_process"))
+        print(payload)
         if payload.get("is_possible_via_templates"):
             if payload.get("missing_attributes"):
                 abort(400)
@@ -38,23 +44,27 @@ def home():
                     query_template_class = CLASS_MAP[payload.get("query_template_class")]
                     query_instance = query_template_class(**payload.get("attributes"))
                     result = query_instance.execute_query()
-                    print(result)
                 else:
                     abort(500)
         else:
-            print("Trying Coral MCP and making the LLM create the query")
-            # Fallback MCP Client logic will be added here
+            result = NOT_POSSIBLE_VIA_TEMPLATES
         
         query_and_raw_response = f"Query was: {user_query} and the raw response is: {result}" 
-        response = client.models.generate_content(
-            model = GEMINI_MODEL,
-            contents = query_and_raw_response,
-            config = types.GenerateContentConfig(
-                response_mime_type = "application/json",
-                response_json_schema = GenAIResponseToUser.model_json_schema(),
-                system_instruction = SYSTEM_INSTUCTION_SECOND_PASS
+        print(query_and_raw_response)
+        try:
+            response = client.models.generate_content(
+                model = GEMINI_MODEL,
+                contents = query_and_raw_response,
+                config = types.GenerateContentConfig(
+                    response_mime_type = "application/json",
+                    response_json_schema = GenAIResponseToUser.model_json_schema(),
+                    system_instruction = SYSTEM_INSTUCTION_SECOND_PASS
+                )
             )
-        )
+        except ClientError as e:
+            if e.code == 429:
+                abort(429)
+            raise
 
         payload = json.loads(response.text)
 
@@ -62,6 +72,18 @@ def home():
             flag = True
         return render_template("home.html", form=form, flag=flag, response=payload.get("response_to_user"))
     return render_template("home.html", form=form, flag=flag)
+
+@app.route("/api/mocks", methods=["GET"])
+def get_mocks():
+    try:
+        mocks_path = Path(__file__).absolute().parents[1] / "mocks.json"
+        with open(mocks_path, "r") as f:
+            mocks = json.load(f)
+        return jsonify(mocks)
+    except FileNotFoundError:
+        return jsonify({"error": "File not found"}), 404
+    except json.JSONDecodeError:
+        return jsonify({"error": "Invalid JSON"}), 400
 
 @app.errorhandler(503)
 def handle_503_error(error):
@@ -74,3 +96,7 @@ def handle_400_error(error):
 @app.errorhandler(500)
 def handle_500_error(error):
     return render_template("errors/500_error.html", title="Its on us"), 500
+
+@app.errorhandler(429)
+def handle_error(error):
+    return render_template("errors/429_error.html", title="Resource Exhausted"), 429

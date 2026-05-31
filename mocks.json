@@ -1,0 +1,18 @@
+{
+    "owner": "github",
+    "repository": "gitignore",
+    "queries": [
+        "How many commits were made to this repository in week 10 of this year?",
+        "What is the commit frequency pattern for this repository over the last year, has it been on a decline?",
+        "Show me the code churn (additions and deletions) for this repository",
+        "Who are the top 10 contributors of this repository",
+        "List the active branches in this repository",
+        "What is the CI/CD success rate for the main branch of this repository?",
+        "Show me the recent activity in this repository",
+        "How many open and closed issues does this repository have?",
+        "What is the PR status for this repository? How many are open vs merged?",
+        "Give me an analysis of the code review activity in this repo's PRs",
+        "Please show me the 50 most recent commits to this repository",
+        "How many deployments have been made for this repository?"
+    ]
+}
